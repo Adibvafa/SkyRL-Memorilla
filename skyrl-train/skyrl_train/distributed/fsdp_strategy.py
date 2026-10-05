@@ -567,8 +567,32 @@ class FSDPStrategy(DistributedStrategy):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             with get_fsdp_state_ctx(load_model, StateDictType.SHARDED_STATE_DICT, state_dict_cfg, optim_cfg):
-                # Load model state dict
-                load_model.load_state_dict(model_state_dict, strict=load_module_strict)
+                # Load model state dict. Strict loading rejects keys the checkpoint is missing (trainable or base
+                # weights to restore) but drops extra keys of frozen submodules that are rebuilt on every run.
+                if load_module_strict:
+                    live_keys = set(load_model.state_dict().keys())
+                    ckpt_keys = set(model_state_dict.keys())
+                    unexpected = ckpt_keys - live_keys
+                    missing = live_keys - ckpt_keys
+                    if missing:
+                        raise RuntimeError(
+                            f"[rank-{rank}]: Checkpoint is missing {len(missing)} key(s) "
+                            f"required by the model, refusing to load. "
+                            f"First few missing: {sorted(missing)[:10]}"
+                        )
+                    if unexpected:
+                        self.print(
+                            f"[rank-{rank}]: Dropping {len(unexpected)} stale checkpoint "
+                            f"key(s) not present in the current model (e.g. frozen, "
+                            f"non-trainable submodules). "
+                            f"First few: {sorted(unexpected)[:5]}"
+                        )
+                        model_state_dict = {k: v for k, v in model_state_dict.items() if k in live_keys}
+                    # All live keys are now guaranteed present; load strictly so
+                    # any remaining inconsistency (e.g. shape mismatch) still errors.
+                    load_model.load_state_dict(model_state_dict, strict=True)
+                else:
+                    load_model.load_state_dict(model_state_dict, strict=load_module_strict)
                 self.print(f"[rank-{rank}]: Successfully loaded model state dict")
 
                 # Load optimizer state dict if optimizer object is provided and loading is requested

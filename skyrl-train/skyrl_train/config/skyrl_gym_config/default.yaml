@@ -14,3 +14,25 @@ search:
   search_url: "http://127.0.0.1:8000/retrieve"
   topk: 3
   timeout: 30
+
+# TextWorld games played through the Inform7 engine (.z8). Completed turns become documents for the memory modality.
+textworld:
+  max_turns: 50
+  memory_window: 1  # completed turns per memory document
+  max_memory_docs: 60  # most recent documents kept
+  max_observation_chars: 200  # observation length kept in a document; 0 keeps it whole
+  memory_modality_id: "memorilla"
+  placeholder_token: "<|image_pad|>"
+  max_placeholder_tokens: 8  # must equal the modality's max_placeholder_tokens
+  enable_memory: true  # false plays without any memory payload
+
+# TextWorld game specs (.json) played with the in-process simulator.
+fast_textworld:
+  max_turns: 50
+  memory_window: 5
+  max_memory_docs: 4
+  max_observation_chars: 0
+  memory_modality_id: "memorilla"
+  placeholder_token: "<|image_pad|>"
+  max_placeholder_tokens: 8
+  enable_memory: true

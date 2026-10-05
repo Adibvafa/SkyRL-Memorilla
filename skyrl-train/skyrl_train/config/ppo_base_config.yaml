@@ -11,6 +11,21 @@ data:
   train_data: ["${oc.env:HOME}/data/gsm8k/train.parquet"]
   val_data: ["${oc.env:HOME}/data/gsm8k/validation.parquet"]
 
+modalities: {}
+# Expected schema per modality:
+#   <modality_id>:
+#     placeholder_token: "<modal_pad>"
+#     max_placeholder_tokens: 0  # integer; reserved token budget for this placeholder
+#     encoder:
+#       target: "package.module:factory"  # import path or resolver string
+#       kwargs: {}                       # optional constructor kwargs
+#     projection:
+#       target: "package.module:factory"
+#       kwargs: {}
+#     trainable:
+#       encoder: false
+#       projection: true
+
 trainer:
   placement:
     colocate_all: true
@@ -26,6 +41,7 @@ trainer:
   policy:
     model:
       path: "Qwen/Qwen2.5-1.5B-Instruct"
+      freeze_base_model: false
       lora:
           rank: 0
           alpha: 16
@@ -155,9 +171,11 @@ trainer:
   eval_batch_size: 1024
   eval_before_train: true
   eval_interval: 5 # Set to -1 to disable evaluation.
+  eval_only: false # Evaluate the initial (or resumed) model once and exit without training.
   # max prompt length in training dataset
   max_prompt_length: 512
   flash_attn: true
+  modalities: ${modalities}
   disable_fast_tokenizer: false
   target_modules: "all-linear"
   exclude_modules: null
@@ -198,6 +216,7 @@ generator:
   http_endpoint_host: "127.0.0.1"
   http_endpoint_port: 8000
   max_turns: 1
+  refresh_modalities_each_step: false
 
   # chat template configuration
   chat_template:
@@ -210,6 +229,7 @@ generator:
   # Inference engine arguments. Arguments are passed directly to the vLLM or SGLang engine, so names must match
   # the engine's args. To specify an engine arg in the CLI override, use the format: +generator.engine_init_kwargs.arg_name=value
   engine_init_kwargs: {}
+  modalities: ${modalities}
 
   override_existing_update_group: "auto" # "auto", "enable", "disable"
   # sampling params for generation phase

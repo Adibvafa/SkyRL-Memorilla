@@ -37,6 +37,19 @@ __all__ = ["BasePPOExp", "config_dir"]
 def create_ray_wrapped_inference_engines_from_config(cfg: DictConfig, colocate_pg, tokenizer: PreTrainedTokenizerBase):
     from skyrl_train.inference_engines.ray_wrapped_inference_engine import create_ray_wrapped_inference_engines
 
+    engine_init_kwargs = OmegaConf.to_container(cfg.generator.engine_init_kwargs, resolve=True)
+    if not isinstance(engine_init_kwargs, dict):
+        engine_init_kwargs = dict(engine_init_kwargs or {})
+    if cfg.generator.backend == "vllm":
+        engine_init_kwargs.setdefault("modalities_config", cfg.modalities)
+        if cfg.modalities:
+            engine_init_kwargs.setdefault("enable_prompt_embeds", True)
+            if cfg.generator.enable_prefix_caching:
+                logger.warning("Modalities enabled; disabling prefix caching for vLLM compatibility.")
+                cfg.generator.enable_prefix_caching = False
+    else:
+        engine_init_kwargs.pop("modalities_config", None)
+
     engine_kwargs = {
         "num_inference_engines": cfg.generator.num_inference_engines,
         "tensor_parallel_size": cfg.generator.inference_engine_tensor_parallel_size,
@@ -57,7 +70,7 @@ def create_ray_wrapped_inference_engines_from_config(cfg: DictConfig, colocate_p
         "max_num_seqs": cfg.generator.max_num_seqs,
         "tokenizer": tokenizer,
         "backend": cfg.generator.backend,
-        "engine_init_kwargs": cfg.generator.engine_init_kwargs,
+        "engine_init_kwargs": engine_init_kwargs,
     }
 
     # Conditionally add LoRA parameters if LoRA is enabled
@@ -112,6 +125,20 @@ class BasePPOExp:
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
             tokenizer.pad_token_id = tokenizer.eos_token_id
+        # Ensure modality placeholder tokens exist in the tokenizer vocab.
+        if self.cfg.modalities:
+            from skyrl_train.dataset.modalities import normalize_modalities_config
+
+            specs = normalize_modalities_config(self.cfg.modalities)
+            to_add = []
+            for spec in specs.values():
+                token = spec.placeholder_token
+                if tokenizer.convert_tokens_to_ids(token) == -1:
+                    to_add.append(token)
+            if to_add:
+                unique_tokens = list(dict.fromkeys(to_add))
+                tokenizer.add_special_tokens({"additional_special_tokens": unique_tokens})
+                logger.info("Added {} modality placeholder tokens to tokenizer.", len(unique_tokens))
         return tokenizer
 
     def get_train_dataset(self):
@@ -125,10 +152,11 @@ class BasePPOExp:
             tokenizer=self.tokenizer,
             max_prompt_length=self.cfg.trainer.max_prompt_length,
             num_workers=8,
+            modalities_config=self.cfg.modalities,
         )
-        # make sure the dataset is large enough to train on
+        # make sure the dataset is large enough to train on (an evaluation-only run never draws a training batch)
         assert (
-            len(prompts_dataset) >= self.cfg.trainer.train_batch_size
+            self.cfg.trainer.get("eval_only", False) or len(prompts_dataset) >= self.cfg.trainer.train_batch_size
         ), f"dataset should be atleast as large as `train_batch_size` {self.cfg.trainer.train_batch_size}, got size {len(prompts_dataset)}"
         return prompts_dataset
 
@@ -144,6 +172,7 @@ class BasePPOExp:
                 tokenizer=self.tokenizer,
                 max_prompt_length=self.cfg.trainer.max_prompt_length,
                 num_workers=8,
+                modalities_config=self.cfg.modalities,
             )
             return prompts_dataset
         return None
@@ -187,6 +216,7 @@ class BasePPOExp:
             inference_engine_client=inference_engine_client,
             tokenizer=tokenizer,
             model_name=cfg.trainer.policy.model.path,
+            modalities_config=cfg.generator.modalities,
         )
 
     def get_trainer(

@@ -48,6 +48,7 @@ def test_prompt_dataset_filtering(mock_load_dataset, mock_tokenizer, sample_data
 
 def test_collate_fn():
     dataset = PromptDataset.__new__(PromptDataset)  # Bypass __init__
+    dataset.modality_specs = {}
     sample_data = [("prompt 1", "env", {"answer": "a1"}, "1"), ("prompt 2", "env", {"answer": "a2"}, "2")]
     expected = [
         {"prompt": "prompt 1", "env_class": "env", "env_extras": {"answer": "a1"}, "uid": "1"},

@@ -10,6 +10,14 @@
 
 ---
 
+> [!NOTE]
+> This fork adds modality inputs to SkyRL: learned vectors that a trainable encoder places at reserved positions of
+> the prompt, kept in sync between the training policy and the vLLM engines. It also provides TextWorld environments
+> ([`skyrl-gym/skyrl_gym/envs/textworld`](./skyrl-gym/skyrl_gym/envs/textworld)) and a
+> [Memorilla](https://github.com/snap-stanford/memorilla) memory encoder
+> ([`memorilla_handlers.py`](./skyrl-train/skyrl_train/examples/modalities/memorilla_handlers.py)). Training and
+> evaluation recipes are in the `rl/` folder of the Memorilla repository.
+
 # Overview
 
 SkyRL is a full-stack RL library that provides the following components:

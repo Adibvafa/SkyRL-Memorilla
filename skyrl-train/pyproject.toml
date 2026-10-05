@@ -28,7 +28,7 @@ dependencies = [
     "accelerate",
     "torchdata",
     "omegaconf",
-    "ray==2.48.0",
+    "ray==2.51.1",
     "peft",
     "debugpy==1.8.0",
     "hf_transfer",
@@ -42,6 +42,8 @@ dependencies = [
     "s3fs",
     "fastapi",
     "uvicorn",
+    "textworld",
+    "sentence-transformers==5.2.2",
 ]
 
 [tool.uv]

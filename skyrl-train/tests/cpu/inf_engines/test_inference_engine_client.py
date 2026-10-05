@@ -206,6 +206,7 @@ def test_completion_batched_routing_and_order_preservation(num_prompts, with_ses
                 "http_endpoint_host": "127.0.0.1",
                 "http_endpoint_port": 0,
             },
+            "modalities": {},
         }
     )
 
@@ -297,6 +298,7 @@ def test_generate_batched_routing_and_order_preservation(num_prompts, with_sessi
                 "http_endpoint_host": "127.0.0.1",
                 "http_endpoint_port": 0,
             },
+            "modalities": {},
         }
     )
 
