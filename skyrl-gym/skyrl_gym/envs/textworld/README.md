@@ -17,7 +17,8 @@ and win signals match the Inform7 engine on walkthroughs.
 - The dataset row supplies the chat prompt and `game_file`. `init` resets the game and appends the opening observation
   as a user message. `fast_textworld` also appends the command forms the parser accepts to the system prompt.
 - Each model response is parsed for `[ACTION: <command>]` (with a first-line fallback); an empty command becomes `look`.
-- The reward of a turn is the change in game score. The episode ends on a win, a loss or after `max_turns` turns.
+- The reward of a turn is the game score after it, as TextWorld reports it, so a game with a single one-point quest
+  pays 1 on the winning turn and 0 on every other turn. The episode ends on a win, a loss or after `max_turns` turns.
 
 ## Memory documents
 

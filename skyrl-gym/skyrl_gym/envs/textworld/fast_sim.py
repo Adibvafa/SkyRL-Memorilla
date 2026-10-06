@@ -228,8 +228,8 @@ class FastTextWorldSimulator:
         """
         Execute a command. Returns (observation, reward, done, info).
 
-        The reward is 1.0 when all win conditions are satisfied (game won),
-        0.0 otherwise (matching TextWorld's default behavior).
+        The reward is the current score, the total reward of the quests completed
+        so far (matching TextWorld's default behavior).
         """
         if self._done:
             return "The game has already ended.", 0.0, True, self._make_info()

@@ -20,7 +20,8 @@ class TextWorldMemoryEnv(BaseTextEnv):
 
     After every turn the environment publishes the current memory documents as the payload of the modality
     ``memory_modality_id`` in ``extras["modalities"]``, with ``max_placeholder_tokens`` reserved tokens. The generator
-    turns that payload into memory vectors placed before the prompt. The reward of a turn is the change in game score.
+    turns that payload into memory vectors placed before the prompt. The reward of a turn is the game score after it, as
+    TextWorld reports it.
 
     Config keys (``env_config``): ``max_turns``, ``memory_window`` (completed turns per document),
     ``max_memory_docs`` (documents kept, most recent first), ``max_observation_chars`` (observation length kept in a
